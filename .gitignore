@@ -1,16 +1,16 @@
-# Compiled class file
+# Compiled class file в target
 *.class
 
 # Log file
 *.log
 
-# BlueJ files
+# BlueJ files хз что это такое
 *.ctxt
 
-# Mobile Tools for Java (J2ME)
+# Mobile Tools for Java (J2ME) я всё закинул в .*
 .mtj.tmp/
 
-# Package Files #
+# Package Files # это как раз фигня - оно в target
 *.jar
 *.war
 *.nar
@@ -21,3 +21,13 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+# maven build folder
+target
+
+# eclipse project files
+.classpath
+.eclipse
+
+# ну и вообще нафиг всё
+.*
