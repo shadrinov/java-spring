@@ -1,16 +1,16 @@
-# Compiled class file в target
+# Compiled class file
 *.class
 
 # Log file
 *.log
 
-# BlueJ files хз что это такое
+# BlueJ files
 *.ctxt
 
-# Mobile Tools for Java (J2ME) я всё закинул в .*
+# Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
-# Package Files # это как раз фигня - оно в target
+# Package Files
 *.jar
 *.war
 *.nar
@@ -23,11 +23,8 @@
 hs_err_pid*
 
 # maven build folder
-target
+target/
 
 # eclipse project files
 .classpath
 .eclipse
-
-# ну и вообще нафиг всё
-.*
