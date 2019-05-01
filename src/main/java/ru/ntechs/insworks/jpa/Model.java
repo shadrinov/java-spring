@@ -21,6 +21,7 @@ public class Model {
 	private String title;
 	private Integer yearStart;
 	private Integer yearEnd;
+	private String lastName;
 
 
 	public Long getId() {
@@ -49,5 +50,13 @@ public class Model {
 
 	public void setYearEnd(Integer yearEnd) {
 		this.yearEnd = yearEnd;
+	}
+
+	public String getLastName() {
+		return lastName;
+	}
+
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
 	}
 }
