@@ -10,7 +10,6 @@ import javax.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "users")
-// вот lombok
 public class User {
 	@Id
 	@NotNull
