@@ -28,3 +28,4 @@ target/
 # eclipse project files
 .classpath
 .eclipse
+.project

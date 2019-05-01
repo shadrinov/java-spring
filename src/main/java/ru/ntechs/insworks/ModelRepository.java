@@ -9,6 +9,7 @@ import ru.ntechs.insworks.jpa.Model;
 
 @Repository
 public interface ModelRepository extends JpaRepository<Model, Long> {
-	// если ты пишешь что findBy_LastName_ то подразумевается что у модели Model есть проперти которая называется lastName с типом String.
-	List<Model> findByLastName(String model);
+	// если ты пишешь что findByLastName то подразумевается что у
+	// модели Model есть проперти которая называется lastName с типом String.
+	List<Model> findByTitle(String title);
 }
