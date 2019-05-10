@@ -10,6 +10,7 @@ import javax.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "models")
+
 public class Model {
 	@Id
 	@NotNull
@@ -19,8 +20,8 @@ public class Model {
 	private Long id;
 
 	private String title;
-	private Integer yearStart;
-	private Integer yearEnd;
+	private Integer yearstart;
+	private Integer yearend;
 
 	public Long getId() {
 		return id;
@@ -34,19 +35,19 @@ public class Model {
 		this.title = title;
 	}
 
-	public Integer getYearStart() {
-		return yearStart;
+	public Integer getYearstart() {
+		return yearstart;
 	}
 
-	public void setYearStart(Integer yearStart) {
-		this.yearStart = yearStart;
+	public void setYearstart(Integer yearStart) {
+		this.yearstart = yearStart;
 	}
 
-	public Integer getYearEnd() {
-		return yearEnd;
+	public Integer getYearend() {
+		return yearend;
 	}
 
-	public void setYearEnd(Integer yearEnd) {
-		this.yearEnd = yearEnd;
+	public void setYearend(Integer yearEnd) {
+		this.yearend = yearEnd;
 	}
 }

@@ -29,3 +29,5 @@ target/
 .classpath
 .eclipse
 .project
+
+application.properties

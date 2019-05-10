@@ -1,10 +1,14 @@
 package ru.ntechs.insworks;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Logger;
 
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -31,8 +35,13 @@ public class GreetingController {
 	}
 
 	@RequestMapping(method=RequestMethod.GET, value="/greetMe")
-	public Iterable<Model> greetMe() {
-		return repository.findAll();
+	public Page<Model> greetMe(Pageable page) {
+		List<Model> t = repository.findByTitle("Cygnet");
+		Logger log = Logger.getLogger("test");
+
+		log.info(String.format("Count: %d", t.size()));
+
+		return repository.findAll(page);
 	}
 
 	@RequestMapping(method=RequestMethod.POST)
