@@ -9,75 +9,126 @@ import java.net.UnknownHostException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AMI extends Thread {
-	@Value("${ami.hostname}")
-	private String amiHostname;
+	private AMIConfig config;
 
-	@Value("${ami.port}")
-	private Integer amiPort;
+	private Integer verMajor;
+	private Integer verMinor;
 
-	@Value("${ami.username}")
-	private String amiUsername;
-
-	@Value("${ami.password}")
-	private String amiPassword;
-
-	private Socket amiSocket;
+	private Socket socket;
 	private PrintWriter out;
 	private BufferedReader in;
 
+	private Event currentEvent;
 	private final Logger logger = LoggerFactory.getLogger(AMI.class);
 
-	public AMI() {
+
+	public AMI(AMIConfig config) {
 		super();
 
-		in = null;
-		out = null;
+		this.config = config;
 
-		logger.info(String.format("application.properties: app.title=%s", amiHostname));
+		reset();
+		start();
+	}
+
+	private void reset() {
+		this.socket = null;
+		this.in = null;
+		this.out = null;
+		this.currentEvent = null;
 	}
 
 	@Override
 	public void run() {
-		if ((in == null) || (out == null)) {
+		while (true) {
 			try {
-				amiLogin();
+				String ln;
+
+				logger.info(String.format("connecting to ami://%s:%d...", config.getHostname(), config.getPort()));
+
+				amiConnect(config.getHostname(), config.getPort());
+				logger.info(String.format("successfully connected to ami://%s:%d", config.getHostname(), config.getPort()));
+
+				submit(new Login(this, config.getUsername(), config.getPassword()));
+				ln = in.readLine();
+
+				final String amiName = "Asterisk Call Manager/";
+
+				if (ln.startsWith("Asterisk Call Manager/")) {
+					String version = ln.substring(amiName.length());
+					Integer pointPos = version.indexOf('.');
+
+					try {
+						verMajor = Integer.decode(version.substring(0, pointPos));
+						verMinor = Integer.decode(version.substring(pointPos + 1));
+
+						logger.info(String.format("AMI version: %d.%d", verMajor, verMinor));
+					} catch (NumberFormatException e) {
+						logger.error(String.format("Unable to parse AMI version: %s", version));
+					}
+				}
+
+				while (true) {
+					ln = in.readLine();
+
+					if (!ln.isEmpty()) {
+						logger.info(String.format("got message: %s", ln));
+					}
+					else
+						logger.info("TODO: dispatching event");
+				}
 			} catch (UnknownHostException e) {
 				logger.error(String.format("Unable to connect to Asterisk Manager Interface (AMI): %s", e.getLocalizedMessage()));
 			} catch (IOException e) {
 				logger.error(String.format("I/O with Asterisk Manager Interface (AMI) failed: %s", e.getLocalizedMessage()));
+			} finally {
+				reset();
+
+				try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {}
 			}
 		}
 	}
 
-	private void amiLogin() throws UnknownHostException, IOException {
-		if (amiHostname == null) {
+	private void amiConnect(String hostname, Integer port) throws UnknownHostException, IOException {
+		if (config.getHostname() == null) {
 			logger.error("ami.hostname not defined in application.properties");
 			return;
 		}
 
-		if (amiPort == null) {
+		if (config.getPort() == null) {
 			logger.error("ami.port not defined in application.properties");
 			return;
 		}
 
-		if (amiUsername == null) {
+		if (config.getUsername() == null) {
 			logger.error("ami.username not defined in application.properties");
 			return;
 		}
 
-		if (amiPassword == null) {
+		if (config.getPassword() == null) {
 			logger.error("ami.password not defined in application.properties");
 			return;
 		}
 
-		amiSocket = new Socket(amiHostname, amiPort);
+		socket = new Socket(hostname, port);
 
-		out = new PrintWriter(amiSocket.getOutputStream(), true);
-		in = new BufferedReader(new InputStreamReader(amiSocket.getInputStream()));
+		out = new PrintWriter(socket.getOutputStream(), true);
+		in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+	}
+
+	public void submit(Command cmd) {
+		for (String str : cmd.getRequest()) {
+			logger.info(String.format("sending: %s", str));
+			out.println(str);
+		}
+
+		logger.info("sending: <LF>");
+		out.println();
 	}
 }
