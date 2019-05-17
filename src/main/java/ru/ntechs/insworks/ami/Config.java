@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 @EnableConfigurationProperties
 @ConfigurationProperties(prefix="ami")
-public class AMIConfig {
+public class Config {
 	private String hostname = "127.0.0.1";
 	private Integer port = 5038;
 	private String username;

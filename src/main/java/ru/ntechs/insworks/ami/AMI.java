@@ -11,9 +11,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import ru.ntechs.insworks.ami.actions.Login;
+import ru.ntechs.insworks.ami.events.FullyBooted;
+import ru.ntechs.insworks.ami.events.PeerStatus;
+import ru.ntechs.insworks.ami.responses.Success;
+
 @Component
 public class AMI extends Thread {
-	private AMIConfig config;
+	private Config config;
 
 	private Integer verMajor;
 	private Integer verMinor;
@@ -22,15 +27,16 @@ public class AMI extends Thread {
 	private PrintWriter out;
 	private BufferedReader in;
 
-	private Event currentEvent;
+	private Message message;
 	private final Logger logger = LoggerFactory.getLogger(AMI.class);
 
 
-	public AMI(AMIConfig config) {
+	public AMI(Config config) {
 		super();
 
 		this.config = config;
 
+		setName("ami");
 		reset();
 		start();
 	}
@@ -39,7 +45,7 @@ public class AMI extends Thread {
 		this.socket = null;
 		this.in = null;
 		this.out = null;
-		this.currentEvent = null;
+		this.message = null;
 	}
 
 	@Override
@@ -51,7 +57,6 @@ public class AMI extends Thread {
 				logger.info(String.format("connecting to ami://%s:%d...", config.getHostname(), config.getPort()));
 
 				amiConnect(config.getHostname(), config.getPort());
-				logger.info(String.format("successfully connected to ami://%s:%d", config.getHostname(), config.getPort()));
 
 				submit(new Login(this, config.getUsername(), config.getPassword()));
 				ln = in.readLine();
@@ -66,20 +71,44 @@ public class AMI extends Thread {
 						verMajor = Integer.decode(version.substring(0, pointPos));
 						verMinor = Integer.decode(version.substring(pointPos + 1));
 
-						logger.info(String.format("AMI version: %d.%d", verMajor, verMinor));
+						logger.info(String.format("successfully connected to ami://%s:%d, protocol version: %d.%d", config.getHostname(), config.getPort(), verMajor, verMinor));
 					} catch (NumberFormatException e) {
-						logger.error(String.format("Unable to parse AMI version: %s", version));
+						logger.info(String.format("successfully connected to ami://%s:%d", config.getHostname(), config.getPort(), verMajor, verMinor));
+						logger.error(String.format("Failed to parse AMI version: %s", version));
 					}
 				}
 
-				while (true) {
-					ln = in.readLine();
-
+				while ((ln = in.readLine()) != null) {
 					if (!ln.isEmpty()) {
-						logger.info(String.format("got message: %s", ln));
+						Integer pos = ln.indexOf(':');
+						String attr = ln.substring(0, pos).trim();
+						String value = ln.substring(pos + 1).trim();
+
+//						logger.info(String.format("parsed line: \"%s\": \"%s\"", attr, value));
+
+						if (message == null) {
+							if (attr.equalsIgnoreCase("Event")) {
+								if (value.equalsIgnoreCase("PeerStatus"))
+									message = new PeerStatus(this, value);
+								else if (value.equalsIgnoreCase("FullyBooted"))
+									message = new FullyBooted(this, value);
+							}
+							else if (attr.equalsIgnoreCase("Response")) {
+								if (value.equalsIgnoreCase("Success"))
+									message = new Success(this, value);
+							}
+
+							if (message == null)
+								message = new UnsupportedMessage(this, attr, value);
+						}
+						else
+							message.engage(attr, value);
 					}
-					else
-						logger.info("TODO: dispatching event");
+					else {
+						logger.info(String.format("TODO: dispatching message \"%s: %s\"", message.getType(), message.getName()));
+
+						message = null;
+					}
 				}
 			} catch (UnknownHostException e) {
 				logger.error(String.format("Unable to connect to Asterisk Manager Interface (AMI): %s", e.getLocalizedMessage()));
@@ -122,8 +151,8 @@ public class AMI extends Thread {
 		in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 	}
 
-	public void submit(Command cmd) {
-		for (String str : cmd.getRequest()) {
+	public void submit(Action cmd) {
+		for (String str : cmd.getMessageText()) {
 			logger.info(String.format("sending: %s", str));
 			out.println(str);
 		}

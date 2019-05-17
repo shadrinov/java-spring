@@ -1,23 +1,26 @@
-package ru.ntechs.insworks.ami;
+package ru.ntechs.insworks.ami.actions;
 
 import java.util.ArrayList;
 
-public class Login extends Command {
+import ru.ntechs.insworks.ami.AMI;
+import ru.ntechs.insworks.ami.Action;
+
+public class Login extends Action {
 	private String login;
 	private String password;
 
 	public Login(AMI ami, String login, String password) {
-		super(ami);
+		super(ami, "Login");
 
 		this.login = login;
 		this.password = password;
 	}
 
 	@Override
-	public Iterable<String> getRequest() {
+	public Iterable<String> getMessageText() {
 		ArrayList<String> request = new ArrayList<>();
 
-		request.add("Action: Login");
+		request.add(String.format("Action: %s", getName()));
 		request.add(String.format("Username: %s", login));
 		request.add(String.format("Secret: %s", password));
 
