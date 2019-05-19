@@ -11,12 +11,14 @@ public class FullyBooted extends Event {
 	}
 
 	@Override
-	public void engage(String attr, String value) {
+	protected void engage(String attr, String value) {
+		super.engage(attr, value);
+
 		if (attr.equalsIgnoreCase("Privilege"))
 			privilege = value;
 		else if (attr.equalsIgnoreCase("Status")) {}
 		else
-			logger.warn(String.format("Unsupported attribute \"%s\" for message of type \"%s\". Value: \"%s\"", attr, getType(), value));
+			warnUnsupportedAttr(attr, value);
 	}
 
 	public String getPrivilege() {

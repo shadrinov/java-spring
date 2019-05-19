@@ -6,6 +6,10 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Vector;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +34,8 @@ public class AMI extends Thread {
 	private Message message;
 	private final Logger logger = LoggerFactory.getLogger(AMI.class);
 
+	private ConcurrentHashMap<String, Vector<EventHandler>> handlersMap = new ConcurrentHashMap<>();
+	private ExecutorService handlerThreadPool = Executors.newFixedThreadPool(1);
 
 	public AMI(Config config) {
 		super();
@@ -41,13 +47,6 @@ public class AMI extends Thread {
 		start();
 	}
 
-	private void reset() {
-		this.socket = null;
-		this.in = null;
-		this.out = null;
-		this.message = null;
-	}
-
 	@Override
 	public void run() {
 		while (true) {
@@ -56,7 +55,7 @@ public class AMI extends Thread {
 
 				logger.info(String.format("connecting to ami://%s:%d...", config.getHostname(), config.getPort()));
 
-				amiConnect(config.getHostname(), config.getPort());
+				connect(config.getHostname(), config.getPort());
 
 				submit(new Login(this, config.getUsername(), config.getPassword()));
 				ln = in.readLine();
@@ -84,8 +83,6 @@ public class AMI extends Thread {
 						String attr = ln.substring(0, pos).trim();
 						String value = ln.substring(pos + 1).trim();
 
-//						logger.info(String.format("parsed line: \"%s\": \"%s\"", attr, value));
-
 						if (message == null) {
 							if (attr.equalsIgnoreCase("Event")) {
 								if (value.equalsIgnoreCase("PeerStatus"))
@@ -99,13 +96,36 @@ public class AMI extends Thread {
 							}
 
 							if (message == null)
-								message = new UnsupportedMessage(this, attr, value);
+								message = new PlainMessage(this, attr, value);
 						}
 						else
 							message.engage(attr, value);
 					}
 					else {
-						logger.info(String.format("TODO: dispatching message \"%s: %s\"", message.getType(), message.getName()));
+//						if (message instanceof PlainMessage)
+//							message.dump();
+
+						if (message.getName().length() > 0) {
+							Vector<EventHandler> queue = handlersMap.get(message.getName().toLowerCase());
+
+							if (queue != null) {
+								for (EventHandler handler : queue) {
+									handlerThreadPool.execute(new Runnable() {
+										private Message messageLocal = message;
+
+										@Override
+										public void run() {
+											try {
+												handler.run(messageLocal);
+											}
+											catch (Exception e) {
+												e.printStackTrace();
+											}
+										}
+									});
+								}
+							}
+						}
 
 						message = null;
 					}
@@ -124,7 +144,29 @@ public class AMI extends Thread {
 		}
 	}
 
-	private void amiConnect(String hostname, Integer port) throws UnknownHostException, IOException {
+	public void addHandler(String eventName, EventHandler handler) {
+		eventName = eventName.toLowerCase();
+		Vector<EventHandler> queue = handlersMap.get(eventName);
+
+		if (queue == null) {
+			queue = new Vector<>();
+			handlersMap.put(eventName, queue);
+		}
+
+		queue.add(handler);
+	}
+
+	protected void submit(Action cmd) {
+		for (String str : cmd.getMessageText()) {
+			logger.info(String.format("sending: %s", str));
+			out.println(str);
+		}
+
+		logger.info("sending: <LF>");
+		out.println();
+	}
+
+	private void connect(String hostname, Integer port) throws UnknownHostException, IOException {
 		if (config.getHostname() == null) {
 			logger.error("ami.hostname not defined in application.properties");
 			return;
@@ -151,13 +193,10 @@ public class AMI extends Thread {
 		in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 	}
 
-	public void submit(Action cmd) {
-		for (String str : cmd.getMessageText()) {
-			logger.info(String.format("sending: %s", str));
-			out.println(str);
-		}
-
-		logger.info("sending: <LF>");
-		out.println();
+	private void reset() {
+		this.socket = null;
+		this.in = null;
+		this.out = null;
+		this.message = null;
 	}
 }

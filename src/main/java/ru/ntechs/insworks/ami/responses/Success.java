@@ -11,11 +11,13 @@ public class Success extends Response {
 	}
 
 	@Override
-	public void engage(String attr, String value) {
+	protected void engage(String attr, String value) {
+		super.engage(attr, value);
+
 		if (attr.equalsIgnoreCase("Message"))
 			message = value;
 		else
-			logger.warn(String.format("Unsupported attribute \"%s\" for message of type \"%s\". Value: \"%s\"", attr, getType(), value));
+			warnUnsupportedAttr(attr, value);
 	}
 
 	public String getMessage() {
