@@ -102,8 +102,8 @@ public class AMI extends Thread {
 							message.engage(attr, value);
 					}
 					else {
-//						if (message instanceof PlainMessage)
-//							message.dump();
+						if (message instanceof PlainMessage)
+							message.dump();
 
 						if (message.getName().length() > 0) {
 							Vector<EventHandler> queue = handlersMap.get(message.getName().toLowerCase());

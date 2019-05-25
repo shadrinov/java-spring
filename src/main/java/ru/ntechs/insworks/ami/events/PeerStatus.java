@@ -9,6 +9,8 @@ public class PeerStatus extends Event {
 	private String peer;
 	private String peerStatus;
 	private String address;
+	private Integer time;
+	private String cause;
 
 	public PeerStatus(AMI ami, String name) {
 		super(ami, name);
@@ -28,6 +30,10 @@ public class PeerStatus extends Event {
 			peerStatus = value;
 		else if (attr.equalsIgnoreCase("Address"))
 			address = value;
+		else if (attr.equalsIgnoreCase("Time"))
+			time = Integer.decode(value);
+		else if (attr.equalsIgnoreCase("Cause"))
+			cause = value;
 		else
 			warnUnsupportedAttr(attr, value);
 	}
@@ -50,5 +56,13 @@ public class PeerStatus extends Event {
 
 	public String getAddress() {
 		return address;
+	}
+
+	public Integer getTime() {
+		return time;
+	}
+
+	public String getCause() {
+		return cause;
 	}
 }
