@@ -24,7 +24,7 @@ import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.web.util.HtmlUtils;
 
-import ru.ntechs.insworks.ami.AMI;
+import ru.ntechs.ami.AMI;
 import ru.ntechs.insworks.jpa.Model;
 
 @RestController
@@ -72,7 +72,7 @@ public class GreetingController {
 		return null;
 	}
 
-	@MessageMapping("/app")
+	@MessageMapping("/news.test")
 	@SendTo("/topic/greetings")
 	public Greeting greeting(HelloMessage message) throws Exception {
 		Thread.sleep(1000); // simulated delay
@@ -92,5 +92,9 @@ public class GreetingController {
 	@ModelAttribute
 	public void setVaryResponseHeader(HttpServletResponse response) {
 		response.setHeader("Cache-Control", "no-cache, no-store, max-age=0, must-revalidate");
+	}
+
+	public AMI getAmi() {
+		return ami;
 	}
 }

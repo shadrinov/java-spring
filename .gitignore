@@ -27,7 +27,7 @@ target/
 
 # eclipse project files
 .classpath
-.eclipse
+.settings
 .project
 
 application.properties
